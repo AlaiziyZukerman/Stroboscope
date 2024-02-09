@@ -1,0 +1,9 @@
+Manufacturer=Lite-On
+PartNumber=LTPL-A138DWAGB
+PartCategory=LED
+PackageCategory=LEDs Chip
+PinCount=2
+Version=1.1
+Released=
+Downloaded=2024-02-08 22:36:44
+3D=N
