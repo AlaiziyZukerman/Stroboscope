@@ -45,13 +45,31 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+uint8_t buffer[64];
+volatile uint8_t fill_buffer_flag = 0;
+volatile uint8_t refresh_parameters = 0;
+
+struct parameters_t{
+	int status;
+	int power;
+	int light;
+	int brightness;
+	int frequency;
+	int period;
+	uint16_t prescaler;
+}my_parameters;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+void fill_parameters(void);
+void set_parameters (void);
+void set_light (void);
+void set_power (void);
+void set_strob (void);
+void set_shutdown(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -90,7 +108,8 @@ int main(void)
   MX_TIM1_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_1);
+  my_parameters.prescaler = 4799;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -151,7 +170,123 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void fill_parameters(void){
+	char sep []= ".";
+	char *mystr;
+	mystr = strtok(buffer, sep);
 
+	for (int i=0; i<=6; i++){
+	   char *mystr_last = mystr;
+	   mystr = strtok (NULL,sep);
+	   if(mystr == NULL) break;
+	   int num = mystr - mystr_last;
+	   (num < 1) ? (num = 1) : (num--);
+	   char numeric [7] = {0}; //4 default
+	   memcpy(&numeric, mystr_last, num);
+	   switch (i){
+		   case 0:
+			   my_parameters.status=atoi(numeric);
+			   break;
+		   case 1:
+			   my_parameters.power=atoi(numeric);
+			   break;
+		   case 2:
+			   my_parameters.light=atoi(numeric);
+			   break;
+		   case 3:
+			   my_parameters.brightness=atoi(numeric);
+
+			   break;
+		   case 4:
+			   my_parameters.frequency=atoi(numeric);
+
+			   break;
+		   case 5:
+			   my_parameters.period=atoi(numeric);
+			   break;
+	   }
+	}
+
+
+	set_strob();
+}
+
+void set_parameters (void){
+
+
+		if (my_parameters.power){
+			set_power();
+		}
+
+		if (my_parameters.light && my_parameters.status){
+			set_light();
+		}
+
+		if ((0 == my_parameters.light) && my_parameters.status){
+			set_strob();
+		}
+
+		if (0 == my_parameters.status){
+			set_shutdown();
+		}
+
+}
+
+void set_power (void){
+	if (my_parameters.power) HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+	else HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+}
+
+void set_light (void){
+	HAL_TIM_OC_Stop_IT(&htim1, TIM_CHANNEL_1);
+	TIM1->PSC = 4799; //1MHz
+	TIM1->ARR = 99;
+	//here calculate have mistake
+	uint32_t brightness = (uint32_t)((int)(TIM1->ARR + 1) * my_parameters.brightness) / 100;
+	TIM1->CCR1 = brightness; //50% default from PC
+	HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_1);
+}
+
+void set_strob (void){
+	if (my_parameters.frequency <= 50){
+		TIM1->PSC = 479;
+		uint32_t period = (uint32_t) (my_parameters.period);
+		uint32_t freq = (uint32_t) ((SystemCoreClock / (TIM1->PSC + 1)) / (my_parameters.frequency) - 1);
+		if ((TIM1->ARR != freq) || (TIM1->CCR1 != period )){
+			HAL_TIM_OC_Stop_IT(&htim1, TIM_CHANNEL_1);
+			TIM1->ARR = freq;
+			TIM1->CCR1 = period;
+			HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_1);
+		}
+	}
+	else{
+		TIM1->PSC = 4799;
+		uint32_t period = (uint32_t) (my_parameters.period);
+		uint32_t freq = (uint32_t) ((SystemCoreClock / (TIM1->PSC + 1)) / (my_parameters.frequency) - 1);
+		if ((TIM1->ARR != freq) || (TIM1->CCR1 != period )){
+			HAL_TIM_OC_Stop_IT(&htim1, TIM_CHANNEL_1);
+			TIM1->ARR = freq;
+			TIM1->CCR1 = period;
+			HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_1);
+		}
+	}
+
+
+
+//	uint32_t period = (uint32_t) (my_parameters.period);
+//	uint32_t freq = (uint32_t) ((SystemCoreClock / (TIM1->PSC + 1)) / (my_parameters.frequency) - 1);
+//	if ((TIM1->ARR != freq) || (TIM1->CCR1 != period )){
+//		HAL_TIM_OC_Stop_IT(&htim1, TIM_CHANNEL_1);
+//		TIM1->ARR = freq;
+//		TIM1->CCR1 = period;
+//		HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_1);
+//	}
+}
+
+void set_shutdown(void){
+
+	HAL_TIM_OC_Stop_IT(&htim1, TIM_CHANNEL_1);
+}
 /* USER CODE END 4 */
 
 /**

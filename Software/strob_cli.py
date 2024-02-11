@@ -12,4 +12,10 @@ parser.add_argument('--frequency', '-f', help='Frequency 1Hz - 1000Hz', default=
 parser.add_argument('--period', '-pd', help='Period of flash 16μs - 65.000μs', default=10)
 args = parser.parse_args()
 
+my_ser = serial.Serial(args.port, args.baudrate)
+buff = [args.status, args.power, args.light, args.brightness, args.frequency, args.period, 0]
+str_buff = '.'.join(str(x) for x in buff)
+
+my_ser.write(str_buff.encode())
+my_ser.close()
 
