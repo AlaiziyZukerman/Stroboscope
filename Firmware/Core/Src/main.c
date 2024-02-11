@@ -107,8 +107,10 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM1_Init();
   MX_USB_DEVICE_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_OC_Start(&htim2, TIM_CHANNEL_1);
   my_parameters.prescaler = 4799;
   /* USER CODE END 2 */
 
@@ -116,6 +118,15 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  if (fill_buffer_flag){
+		  fill_buffer_flag = 0;
+		  fill_parameters();
+	  }
+
+	  if (refresh_parameters){
+		  refresh_parameters = 0;
+		  set_strob();
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -207,8 +218,7 @@ void fill_parameters(void){
 	   }
 	}
 
-
-	set_strob();
+	refresh_parameters = 1;
 }
 
 void set_parameters (void){
@@ -248,28 +258,35 @@ void set_light (void){
 }
 
 void set_strob (void){
-	if (my_parameters.frequency <= 50){
-		TIM1->PSC = 479;
-		uint32_t period = (uint32_t) (my_parameters.period);
-		uint32_t freq = (uint32_t) ((SystemCoreClock / (TIM1->PSC + 1)) / (my_parameters.frequency) - 1);
-		if ((TIM1->ARR != freq) || (TIM1->CCR1 != period )){
-			HAL_TIM_OC_Stop_IT(&htim1, TIM_CHANNEL_1);
-			TIM1->ARR = freq;
-			TIM1->CCR1 = period;
-			HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_1);
-		}
-	}
-	else{
-		TIM1->PSC = 4799;
-		uint32_t period = (uint32_t) (my_parameters.period);
-		uint32_t freq = (uint32_t) ((SystemCoreClock / (TIM1->PSC + 1)) / (my_parameters.frequency) - 1);
-		if ((TIM1->ARR != freq) || (TIM1->CCR1 != period )){
-			HAL_TIM_OC_Stop_IT(&htim1, TIM_CHANNEL_1);
-			TIM1->ARR = freq;
-			TIM1->CCR1 = period;
-			HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_1);
-		}
-	}
+	uint32_t period = (uint32_t) (my_parameters.period);
+	//TIM1->ARR = (period <= 1)?(period):(period - 1);
+
+	uint32_t freq = (uint32_t) ((SystemCoreClock / (TIM2->PSC + 1)) / (my_parameters.frequency) - 1);
+	TIM2->ARR = freq;
+//
+//
+//	if (my_parameters.frequency <= 50){
+//		TIM1->PSC = 479;
+//
+//
+//		if ((TIM1->ARR != freq) || (TIM1->CCR1 != period )){
+//			HAL_TIM_OC_Stop_IT(&htim1, TIM_CHANNEL_1);
+//			TIM1->ARR = freq;
+//			TIM1->CCR1 = period;
+//			HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_1);
+//		}
+//	}
+//	else{
+//		TIM1->PSC = 4799;
+//		uint32_t period = (uint32_t) (my_parameters.period);
+//		uint32_t freq = (uint32_t) ((SystemCoreClock / (TIM1->PSC + 1)) / (my_parameters.frequency) - 1);
+//		if ((TIM1->ARR != freq) || (TIM1->CCR1 != period )){
+//			HAL_TIM_OC_Stop_IT(&htim1, TIM_CHANNEL_1);
+//			TIM1->ARR = freq;
+//			TIM1->CCR1 = period;
+//			HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_1);
+//		}
+//	}
 
 
 
