@@ -109,8 +109,10 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_1);
   HAL_TIM_OC_Start(&htim2, TIM_CHANNEL_1);
+
+  HAL_TIM_OC_Start(&htim1, TIM_CHANNEL_1);
+
   my_parameters.prescaler = 4799;
   /* USER CODE END 2 */
 
@@ -118,15 +120,15 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if (fill_buffer_flag){
-		  fill_buffer_flag = 0;
-		  fill_parameters();
-	  }
-
-	  if (refresh_parameters){
-		  refresh_parameters = 0;
-		  set_strob();
-	  }
+//	  if (fill_buffer_flag){
+//		  fill_buffer_flag = 0;
+//		  fill_parameters();
+//	  }
+//
+//	  if (refresh_parameters){
+//		  refresh_parameters = 0;
+//		  set_strob();
+//	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
