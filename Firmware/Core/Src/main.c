@@ -24,7 +24,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#if defined(UNITY_TEST)
+  #include "unity.h"
+  #include "unity_fixture.h"
 
+  void RunAllTests(void);
+#endif
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,9 +50,17 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t buffer[64];
+
+#if defined(UNITY_TEST)
+  uint8_t buffer[64] = "1.0.0.50.100.100.0";
+#else
+  uint8_t buffer[64];
+#endif
+
+
 volatile uint8_t fill_buffer_flag = 0;
 volatile uint8_t refresh_parameters = 0;
+volatile uint8_t status_timer_flag = 0;
 
 struct parameters_t{
 	int status;
@@ -56,20 +69,34 @@ struct parameters_t{
 	int brightness;
 	int frequency;
 	int period;
-	uint16_t prescaler;
 }my_parameters;
+
+typedef enum status_t{
+	NO_ERR,
+	ERR,
+	NO_VALID,
+	CONFLICT_Values,
+	FAILURE,
+	ON,
+	OFF
+}status;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void fill_parameters(void);
-void set_parameters (void);
-void set_light (void);
-void set_power (void);
-void set_strob (void);
-void set_shutdown(void);
+#if defined(UNITY_TEST)
+extern void initialise_monitor_handles(viod);
+#endif
+status fill_parameters(void);
+status set_parameters (void);
+status set_light (void);
+status set_power (void);
+status set_strob (void);
+status set_shutdown(void);
+status reset_shutdown(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -93,7 +120,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+#if !defined(UNITY_TEST_HOST)
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -107,32 +134,44 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM1_Init();
   MX_USB_DEVICE_Init();
-  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_OC_Start(&htim2, TIM_CHANNEL_1);
+#endif
+#if defined(UNITY_TEST)
+  initialise_monitor_handles();
+ #endif
 
-  HAL_TIM_OC_Start(&htim1, TIM_CHANNEL_1);
-
-  my_parameters.prescaler = 4799;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+#if !defined(UNITY_TEST)
   while (1)
   {
-//	  if (fill_buffer_flag){
-//		  fill_buffer_flag = 0;
-//		  fill_parameters();
-//	  }
-//
-//	  if (refresh_parameters){
-//		  refresh_parameters = 0;
-//		  set_strob();
-//	  }
+	  if (fill_buffer_flag){
+		  fill_buffer_flag = 0;
+		  fill_parameters();
+	  }
+
+	  if (refresh_parameters){
+		  refresh_parameters = 0;
+		  set_parameters();
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
   }
+#else
+
+  my_parameters.status = 1;
+  my_parameters.power = 0;
+  my_parameters.light = 0;
+  my_parameters.brightness = 50;
+  my_parameters.frequency = 100;
+  my_parameters.period = 100;
+
+  UnityMain(0, NULL, RunAllTests);
+  while(1);
+#endif
   /* USER CODE END 3 */
 }
 
@@ -183,7 +222,7 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void fill_parameters(void){
+status fill_parameters(void){
 	char sep []= ".";
 	char *mystr;
 	mystr = strtok(buffer, sep);
@@ -199,12 +238,15 @@ void fill_parameters(void){
 	   switch (i){
 		   case 0:
 			   my_parameters.status=atoi(numeric);
+
 			   break;
 		   case 1:
 			   my_parameters.power=atoi(numeric);
+
 			   break;
 		   case 2:
 			   my_parameters.light=atoi(numeric);
+
 			   break;
 		   case 3:
 			   my_parameters.brightness=atoi(numeric);
@@ -216,20 +258,18 @@ void fill_parameters(void){
 			   break;
 		   case 5:
 			   my_parameters.period=atoi(numeric);
+
 			   break;
 	   }
 	}
-
 	refresh_parameters = 1;
+	return NO_ERR;
 }
 
-void set_parameters (void){
+status set_parameters (void){
 
-
-		if (my_parameters.power){
-			set_power();
-		}
-
+		set_power();
+		set_shutdown();
 		if (my_parameters.light && my_parameters.status){
 			set_light();
 		}
@@ -238,73 +278,54 @@ void set_parameters (void){
 			set_strob();
 		}
 
-		if (0 == my_parameters.status){
-			set_shutdown();
-		}
-
+		return NO_ERR;
 }
 
-void set_power (void){
-	if (my_parameters.power) HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-	else HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+status set_power (void){
+	if (my_parameters.power) {
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+		return ON;
+	}
+	else {
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+		return OFF;
+	}
 }
 
-void set_light (void){
-	HAL_TIM_OC_Stop_IT(&htim1, TIM_CHANNEL_1);
-	TIM1->PSC = 4799; //1MHz
-	TIM1->ARR = 99;
-	//here calculate have mistake
+status set_light (void){
+	TIM1->ARR = 1999;
 	uint32_t brightness = (uint32_t)((int)(TIM1->ARR + 1) * my_parameters.brightness) / 100;
-	TIM1->CCR1 = brightness; //50% default from PC
-	HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_1);
+	if (brightness > 100) return CONFLICT_Values;
+	TIM1->CCR1 = brightness;
+	if (TIM1->CCR1 != brightness) return ERR;
+	return ON;
 }
 
-void set_strob (void){
-	uint32_t period = (uint32_t) (my_parameters.period);
-	//TIM1->ARR = (period <= 1)?(period):(period - 1);
+status set_strob (void){
 
-	uint32_t freq = (uint32_t) ((SystemCoreClock / (TIM2->PSC + 1)) / (my_parameters.frequency) - 1);
-	TIM2->ARR = freq;
-//
-//
-//	if (my_parameters.frequency <= 50){
-//		TIM1->PSC = 479;
-//
-//
-//		if ((TIM1->ARR != freq) || (TIM1->CCR1 != period )){
-//			HAL_TIM_OC_Stop_IT(&htim1, TIM_CHANNEL_1);
-//			TIM1->ARR = freq;
-//			TIM1->CCR1 = period;
-//			HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_1);
-//		}
-//	}
-//	else{
-//		TIM1->PSC = 4799;
-//		uint32_t period = (uint32_t) (my_parameters.period);
-//		uint32_t freq = (uint32_t) ((SystemCoreClock / (TIM1->PSC + 1)) / (my_parameters.frequency) - 1);
-//		if ((TIM1->ARR != freq) || (TIM1->CCR1 != period )){
-//			HAL_TIM_OC_Stop_IT(&htim1, TIM_CHANNEL_1);
-//			TIM1->ARR = freq;
-//			TIM1->CCR1 = period;
-//			HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_1);
-//		}
-//	}
+	uint32_t freq = (uint32_t) ((SystemCoreClock / (TIM1->PSC + 1)) / (my_parameters.frequency) - 1);
+	uint32_t period = ((uint32_t) ( (my_parameters.period)) / (10000 / freq));
+	if ((TIM1->ARR != freq) || (TIM1->CCR1 != period )){
+		TIM1->ARR = freq;
+		TIM1->CCR1 = period;
+		HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+		return NO_ERR;
+	}
 
+	return FAILURE;
 
-
-//	uint32_t period = (uint32_t) (my_parameters.period);
-//	uint32_t freq = (uint32_t) ((SystemCoreClock / (TIM1->PSC + 1)) / (my_parameters.frequency) - 1);
-//	if ((TIM1->ARR != freq) || (TIM1->CCR1 != period )){
-//		HAL_TIM_OC_Stop_IT(&htim1, TIM_CHANNEL_1);
-//		TIM1->ARR = freq;
-//		TIM1->CCR1 = period;
-//		HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_1);
-//	}
 }
 
-void set_shutdown(void){
-
-	HAL_TIM_OC_Stop_IT(&htim1, TIM_CHANNEL_1);
+status set_shutdown(void){
+	HAL_StatusTypeDef status;
+	if (0 == my_parameters.status) {
+		status = HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
+	}
+	if(my_parameters.status) {
+		status = HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+	}
+	if(HAL_OK ==  status) return NO_ERR;
+	return FAILURE;
 }
 /* USER CODE END 4 */
 

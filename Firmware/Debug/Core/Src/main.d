@@ -28,7 +28,12 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd_ex.h \
  ../Core/Inc/tim.h ../Core/Inc/main.h ../USB_DEVICE/App/usb_device.h \
  ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_def.h \
- ../USB_DEVICE/Target/usbd_conf.h ../Core/Inc/gpio.h
+ ../USB_DEVICE/Target/usbd_conf.h ../Core/Inc/gpio.h \
+ C:/Stroboscope/Firmware/Drivers/Unity-master/src/unity.h \
+ C:/Stroboscope/Firmware/Drivers/Unity-master/src/unity_internals.h \
+ C:/Stroboscope/Firmware/Drivers/Unity-master/extras/fixture/src/unity_fixture.h \
+ C:/Stroboscope/Firmware/Drivers/Unity-master/extras/fixture/src/unity_fixture_internals.h \
+ C:/Stroboscope/Firmware/Drivers/Unity-master/src/unity_internals.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
 ../Core/Inc/stm32f1xx_hal_conf.h:
@@ -63,3 +68,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_def.h:
 ../USB_DEVICE/Target/usbd_conf.h:
 ../Core/Inc/gpio.h:
+C:/Stroboscope/Firmware/Drivers/Unity-master/src/unity.h:
+C:/Stroboscope/Firmware/Drivers/Unity-master/src/unity_internals.h:
+C:/Stroboscope/Firmware/Drivers/Unity-master/extras/fixture/src/unity_fixture.h:
+C:/Stroboscope/Firmware/Drivers/Unity-master/extras/fixture/src/unity_fixture_internals.h:
+C:/Stroboscope/Firmware/Drivers/Unity-master/src/unity_internals.h:

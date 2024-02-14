@@ -1,0 +1,9 @@
+../Core/Src/main.c:182:6:SystemClock_Config	4
+../Core/Src/main.c:225:8:fill_parameters	10
+../Core/Src/main.c:284:8:set_power	2
+../Core/Src/main.c:295:8:set_light	2
+../Core/Src/main.c:304:8:set_strob	3
+../Core/Src/main.c:319:8:set_shutdown	3
+../Core/Src/main.c:269:8:set_parameters	4
+../Core/Src/main.c:111:5:main	3
+../Core/Src/main.c:336:6:Error_Handler	1
