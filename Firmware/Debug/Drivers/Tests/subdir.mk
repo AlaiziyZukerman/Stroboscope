@@ -6,15 +6,15 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../Drivers/Tests/AllTests.c \
-../Drivers/Tests/Sqrt.c 
+../Drivers/Tests/Case.c 
 
 OBJS += \
 ./Drivers/Tests/AllTests.o \
-./Drivers/Tests/Sqrt.o 
+./Drivers/Tests/Case.o 
 
 C_DEPS += \
 ./Drivers/Tests/AllTests.d \
-./Drivers/Tests/Sqrt.d 
+./Drivers/Tests/Case.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
@@ -24,7 +24,7 @@ Drivers/Tests/%.o Drivers/Tests/%.su Drivers/Tests/%.cyclo: ../Drivers/Tests/%.c
 clean: clean-Drivers-2f-Tests
 
 clean-Drivers-2f-Tests:
-	-$(RM) ./Drivers/Tests/AllTests.cyclo ./Drivers/Tests/AllTests.d ./Drivers/Tests/AllTests.o ./Drivers/Tests/AllTests.su ./Drivers/Tests/Sqrt.cyclo ./Drivers/Tests/Sqrt.d ./Drivers/Tests/Sqrt.o ./Drivers/Tests/Sqrt.su
+	-$(RM) ./Drivers/Tests/AllTests.cyclo ./Drivers/Tests/AllTests.d ./Drivers/Tests/AllTests.o ./Drivers/Tests/AllTests.su ./Drivers/Tests/Case.cyclo ./Drivers/Tests/Case.d ./Drivers/Tests/Case.o ./Drivers/Tests/Case.su
 
 .PHONY: clean-Drivers-2f-Tests
 

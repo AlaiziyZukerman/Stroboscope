@@ -17,12 +17,12 @@ TEST_TEAR_DOWN(driver)
 //------------------------------------------------------------------------------
 TEST(driver, Positive)
 {
-	TEST_ASSERT_EQUAL_INT(0, set_shutdown());
     TEST_ASSERT_EQUAL_INT(0, set_strob());
-	TEST_ASSERT_EQUAL_INT(3, set_light());
+	TEST_ASSERT_EQUAL_INT(5, set_light());
 	TEST_ASSERT_EQUAL_INT(6, set_power());
 	TEST_ASSERT_EQUAL_INT(0, set_parameters());
 	TEST_ASSERT_EQUAL_INT(0, fill_parameters());
+	TEST_ASSERT_EQUAL_INT(0, set_shutdown());
 }
 
 //------------------------------------------------------------------------------

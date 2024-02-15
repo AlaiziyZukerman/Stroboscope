@@ -293,10 +293,12 @@ status set_power (void){
 }
 
 status set_light (void){
-	TIM1->ARR = 1999;
-	uint32_t brightness = (uint32_t)((int)(TIM1->ARR + 1) * my_parameters.brightness) / 100;
-	if (brightness > 100) return CONFLICT_Values;
+
+	uint32_t brightness = (uint32_t)(((199 + 1) * my_parameters.brightness) / 100);
+	TIM1->ARR = 199;
+	if (brightness > (TIM1->ARR + 1)) return CONFLICT_Values;
 	TIM1->CCR1 = brightness;
+	set_shutdown();
 	if (TIM1->CCR1 != brightness) return ERR;
 	return ON;
 }
@@ -304,11 +306,12 @@ status set_light (void){
 status set_strob (void){
 
 	uint32_t freq = (uint32_t) ((SystemCoreClock / (TIM1->PSC + 1)) / (my_parameters.frequency) - 1);
-	uint32_t period = ((uint32_t) ( (my_parameters.period)) / (10000 / freq));
+	//uint32_t period = (uint32_t) my_parameters.period / ((freq+1) / my_parameters.frequency);
+	uint32_t period = (uint32_t) (freq + 1) * (my_parameters.frequency * my_parameters.period) / 1000000 ;
 	if ((TIM1->ARR != freq) || (TIM1->CCR1 != period )){
 		TIM1->ARR = freq;
 		TIM1->CCR1 = period;
-		HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+		set_shutdown();
 		return NO_ERR;
 	}
 
@@ -324,8 +327,8 @@ status set_shutdown(void){
 	if(my_parameters.status) {
 		status = HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 	}
-	if(HAL_OK ==  status) return NO_ERR;
-	return FAILURE;
+	if(HAL_ERROR ==  status) return FAILURE;
+	return NO_ERR;
 }
 /* USER CODE END 4 */
 
